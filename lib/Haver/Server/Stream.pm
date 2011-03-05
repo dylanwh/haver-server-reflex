@@ -32,6 +32,13 @@ has 'filter' => (
     required => 1,
 );
 
+has 'user' => (
+    is        => 'rw',
+    isa       => 'Haver::Server::Schema::User',
+    predicate => 'has_user',
+    clearer   => 'clear_user',
+);
+
 sub BUILD {
     my ($self) = @_;
 
@@ -64,11 +71,18 @@ sub on_data {
         }
     }
     catch {
-        if ($_->isa('Haver::Server::Fail')) {
-            $self->emit(event => 'fail', args => { name => $_->name, description => $_->description });
+        if (blessed $_ && $_->isa('Haver::Server::Fail')) {
+            $self->emit(
+                event => 'fail', 
+                args => { 
+                    name => $_->name, 
+                    $_->has_args ? (args => $_->args) : () 
+                }
+            );
         }
         else {
             $self->emit(event => 'bork', args => { description => "$_" });
+            warn "Bork: ", $_;
         }
     };
 }
@@ -76,12 +90,6 @@ sub on_data {
 sub on_error {
     my ( $self, $args ) = @_;
     warn "$args->{errfun} error $args->{errnum}: $args->{errstr}\n";
-    $self->stopped();
-}
-
-sub on_closed {
-    my ( $self, $args ) = @_;
-
     $self->stopped();
 }
 
@@ -100,7 +108,12 @@ sub on_bork {
 
 sub on_server_msg {
     my ($self, $args) = @_;
+    print "server msg: $args->{msg}\n";
     $self->put($args->{msg});
+}
+
+sub DEMOLISH {
+    print "Demolish\n";
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -6,6 +6,7 @@ use Haver::Server::Stream;
 use Haver::Server::StreamFactory;
 use Haver::Server::Acceptor;
 use Haver::Server::Filter;
+use Haver::Server::Model;
 use Socket;
 use IO::Socket;
 
@@ -17,7 +18,10 @@ sub BUILD {
     my ($self) = @_;
 
     container $self => as {
-        service 'port' => 7575;
+        service 'model_dsn'  => 'hash';
+        service 'model_args' => {};
+        service 'port'       => 7575;
+
         service 'socket' => (
             block => sub {
                 my $s = shift;
@@ -30,6 +34,13 @@ sub BUILD {
                 );
             },
             dependencies => wire_names('port'),
+        );
+
+        typemap 'Haver::Server::Model' => infer(
+            dependencies => {
+                dsn        => depends_on('model_dsn'),
+                extra_args => depends_on('model_args')
+            }
         );
 
         typemap 'Haver::Server::Stream'   => infer;

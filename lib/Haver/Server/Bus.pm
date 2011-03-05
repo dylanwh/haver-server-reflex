@@ -28,9 +28,17 @@ sub logout {
     $client->ignore($self, '@'.$name);
 }
 
-sub send_msg {
-    my ($self, $target, $msg) = @_;
-    $self->emit(event => $target, args => { msg => $msg });
+use YAML::XS;
+sub send_room {
+    my ($self, $name, $msg) = @_;
+    warn "room $name: " . Dump($msg);
+    $self->emit(event => '#'.$name, args => { msg => $msg });
+}
+
+sub send_user {
+    my ($self, $name, $msg) = @_;
+    warn "user $name: " . Dump($msg);
+    $self->emit(event => '@'.$name, args => { msg => $msg });
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -31,7 +31,10 @@ sub on_accept {
     $self->remember_stream($stream);
 
     my $cmds = $self->commands;
-    $cmds->watch($stream, client_msg => cb_method($cmds, 'on_client_msg') );
+    $cmds->watch($stream,
+        client_msg => cb_method($cmds, 'on_client_msg'),
+        stopped    => cb_method($cmds, 'on_stopped'),
+    );
 }
 
 sub on_error {
